@@ -45,15 +45,25 @@ class PSNProfiles_player_scraper::CommandLineInterface
   end
 
   def valid_profile_data
+    puts "\nDEBUG: Starting valid_profile_data method" # Debug line
+    
     loop do
-      psn_id = gets.strip
+      print "PSN ID: " # Changed from puts to print for better input flow
+      psn_id = STDIN.gets.chomp.strip.force_encoding('UTF-8')
+      puts "DEBUG: Received input: #{psn_id.inspect}" # Debug line
+
+      puts "DEBUG: Calling Scraper.valid_profile..." # Debug line
       valid_profile = PSNProfiles_player_scraper::Scraper.valid_profile(psn_id)
+      puts "DEBUG: Scraper returned: #{valid_profile.inspect}" # Debug line
 
       if valid_profile
-        return PSNProfiles_player_scraper::Scraper.scrape(valid_profile)
+        puts "DEBUG: Profile valid, attempting to scrape..." # Debug line
+        profile_data = PSNProfiles_player_scraper::Scraper.scrape(valid_profile)
+        puts "DEBUG: Scraping completed successfully" # Debug line
+        return profile_data
       else
-        puts "\nInvalid PSN ID. Please try again or refer to note (1) of the README " \
-             "for reasons you might be seeing this error"
+        puts "\nInvalid PSN ID. Please try again or refer to note (1) of the README"
+        puts "DEBUG: Invalid profile, looping again..." # Debug line
       end
     end
   end

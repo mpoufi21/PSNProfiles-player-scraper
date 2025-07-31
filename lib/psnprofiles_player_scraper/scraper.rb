@@ -8,21 +8,44 @@ class PSNProfiles_player_scraper::Scraper
 
   def self.open(psn_id)
     uri = URI.parse(BASE_PATH + URI::DEFAULT_PARSER.escape(psn_id))
-    Nokogiri::HTML(URI.open(uri))
+    
+    # Add timeout
+    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', 
+                read_timeout: 10, open_timeout: 10) do |http|
+      request = Net::HTTP::Get.new(uri)
+      response = http.request(request)
+      Nokogiri::HTML(response.body)
+    end
+  rescue Net::ReadTimeout, Net::OpenTimeout => e
+    puts "Request timed out: #{e.message}"
+    false
+  rescue => e
+    puts "Network error: #{e.message}"
+    false
   end
 
+
   def self.valid_profile(psn_id)
-    profile = PSNProfiles_player_scraper::Scraper.open(psn_id)
+    profile = open(psn_id)
+    return false unless profile
+
+    # Updated validation checks
+    # Check 1: Look for username element (new selector)
+    username_element = profile.css('.profile-header__name').first || 
+                      profile.css('.username').first
     
-    # first check is if the URL redirected to the homepage (untracked profile)
-    if profile.css("span.username").empty?
-      false
-    # second check is if the player has public trophy data on their profile
-    elsif profile.at_css("h1")&.text&.start_with?("Aww")
+    # Check 2: Look for error message (new selector)
+    error_message = profile.css('.error-message').first ||
+                    profile.css('.message-box').first
+
+    if username_element.nil? || error_message
       false
     else
       profile
     end
+  rescue => e
+    puts "Validation error: #{e.message}" if ENV['DEBUG']
+    false
   end
 
   def self.scrape(profile_data)
