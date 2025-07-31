@@ -1,7 +1,7 @@
 # config/environment.rb
 
-# Silence fiddle warning
-Warning.ignore(/fiddle\/import is found in fiddle, which will no longer be part of the default gems/)
+# Silence all verbose warnings (including Fiddle)
+$VERBOSE = nil
 
 # Rest of your environment setup
 $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
