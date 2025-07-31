@@ -1,30 +1,38 @@
+require 'json'
+require 'time'
+
 class PSNProfiles_player_scraper::Player
-  attr_accessor :psn_id, :comment, :level, :level_progress, :next_level_in, :country, :total_trophies, :total_platinums, :total_golds, :total_silvers, :total_bronzes, :games_played, :completed_games, :overall_completion, :unearned_trophies, :trophies_per_day, :world_rank, :country_rank, :recent_trophies, :recent_games, :rarest_trophies, :games_by_platform, :trophies_by_grade, :rarity_breakdown, :completion_breakdown, :first_trophy, :latest_trophy, :length_of_service
+  attr_accessor :psn_id, :comment, :level, :level_progress, :next_level_in, :country, 
+               :total_trophies, :total_platinums, :total_golds, :total_silvers, :total_bronzes,
+               :games_played, :completed_games, :overall_completion, :unearned_trophies,
+               :trophies_per_day, :world_rank, :country_rank, :recent_trophies, :recent_games,
+               :rarest_trophies, :games_by_platform, :trophies_by_grade, :rarity_breakdown,
+               :completion_breakdown, :first_trophy, :latest_trophy, :length_of_service
 
   @@all = []
 
   def initialize(player_data)
     player_data.each do |key, value|
-      self.send("#{key}=", value)
+      send("#{key}=", value) if respond_to?("#{key}=")
     end
 
     @@all << self
   end
 
   def average_rarity
-    self.rarity_breakdown[:average_rarity]
+    rarity_breakdown[:average_rarity]
   end
 
   def trophies_by_rarity
-    self.rarity_breakdown[:trophies_by_rarity]
+    rarity_breakdown[:trophies_by_rarity]
   end
 
   def average_completion
-    self.completion_breakdown[:average_completion]
+    completion_breakdown[:average_completion]
   end
 
   def games_by_completion
-    self.completion_breakdown[:games_by_completion]
+    completion_breakdown[:games_by_completion]
   end
 
   def self.all
@@ -32,8 +40,7 @@ class PSNProfiles_player_scraper::Player
   end
 
   def view(cli)
-    self.view_menu
-
+    view_menu
     cli.main_menu
   end
 
@@ -48,77 +55,73 @@ class PSNProfiles_player_scraper::Player
     puts "\nView the README for more information on each option\n\n"
 
     choice = ""
+    until %w[1 2 3 4 5 main].include?(choice.downcase)
+      choice = gets.strip
+    end
 
-    choice = gets.strip until choice == "1" || choice == "2" || choice == "3" || choice == "4" || choice == "5" || choice.downcase == "main"
-
-    if choice == "1"
-      self.view_basics
-    elsif choice == "2"
-      self.view_totals
-    elsif choice == "3"
-      self.view_summaries
-    elsif choice == "4"
-      self.view_los
-    elsif choice == "5"
-      self.view_collections_menu
+    case choice.downcase
+    when "1" then view_basics
+    when "2" then view_totals
+    when "3" then view_summaries
+    when "4" then view_los
+    when "5" then view_collections_menu
     end
   end
 
   def view_basics
-    puts "\n#{self.psn_id}" + (self.comment != nil ? " ~ #{self.comment}" : "")
-    puts "\nLevel: #{self.level}"
-    puts "Level progress: #{self.level_progress} - next level in #{self.next_level_in}"
-    puts "Rank: #{self.world_rank} (world) | #{self.country_rank} (#{self.country})"
-    puts "\nOverall completion rate: #{self.overall_completion}"
-    puts "Average game completion: #{self.average_completion}"
-    puts "Average trophy rarity: #{self.average_rarity}"
-    puts "Trophies per day: #{self.trophies_per_day}"
+    puts "\n#{psn_id}#{comment ? " ~ #{comment}" : ""}"
+    puts "\nLevel: #{level}"
+    puts "Level progress: #{level_progress} - next level in #{next_level_in}"
+    puts "Rank: #{world_rank} (world) | #{country_rank} (#{country})"
+    puts "\nOverall completion rate: #{overall_completion}"
+    puts "Average game completion: #{average_completion}"
+    puts "Average trophy rarity: #{average_rarity}"
+    puts "Trophies per day: #{trophies_per_day}"
 
-    self.view_menu
+    view_menu
   end
 
   def view_totals
     puts "\nTrophies"
-    puts "  Earned: #{self.total_trophies} | Unearned: #{self.unearned_trophies}"
-    puts "  Platinums: #{self.total_platinums} | Golds: #{self.total_golds} | Silvers: #{self.total_silvers} | Bronzes: #{self.total_bronzes}"
+    puts "  Earned: #{total_trophies} | Unearned: #{unearned_trophies}"
+    puts "  Platinums: #{total_platinums} | Golds: #{total_golds} | Silvers: #{total_silvers} | Bronzes: #{total_bronzes}"
 
     puts "\nGames"
-    puts "  Completed: #{self.completed_games} | Played: #{self.games_played}"
+    puts "  Completed: #{completed_games} | Played: #{games_played}"
 
-    self.view_menu
+    view_menu
   end
 
   def view_summaries
-    # puts data from README summaries section
     puts "\nTrophies by grade"
-    self.trophies_by_grade.each {|grade_data| puts "  #{grade_data[:grade]}: #{grade_data[:trophies]}"}
+    trophies_by_grade.each { |grade_data| puts "  #{grade_data[:grade]}: #{grade_data[:trophies]}" }
 
     puts "\nTrophies by rarity"
-    self.trophies_by_rarity.each {|rarity_data| puts "  #{rarity_data[:rarity_band]}: #{rarity_data[:trophies]}"}
+    trophies_by_rarity.each { |rarity_data| puts "  #{rarity_data[:rarity_band]}: #{rarity_data[:trophies]}" }
 
     puts "\nGames by platform"
-    self.games_by_platform.each {|platform_data| puts "  #{platform_data[:platform]}: #{platform_data[:games]}"}
+    games_by_platform.each { |platform_data| puts "  #{platform_data[:platform]}: #{platform_data[:games]}" }
 
     puts "\nGames by completion percentage"
-    self.games_by_completion.each {|completion_data| puts "  #{completion_data[:completion_band]}: #{completion_data[:games]}"}
+    games_by_completion.each { |completion_data| puts "  #{completion_data[:completion_band]}: #{completion_data[:games]}" }
 
-    self.view_menu
+    view_menu
   end
 
   def view_los
     puts "\nFirst trophy"
-    puts "  #{self.first_trophy[:trophy]} (#{self.first_trophy[:game]})"
-    puts "  #{self.first_trophy[:description]}"
-    puts "\n  Earned: #{PSNProfiles_player_scraper::Player.trophy_earned_date(self, "first")}"
+    puts "  #{first_trophy[:trophy]} (#{first_trophy[:game]})"
+    puts "  #{first_trophy[:description]}"
+    puts "\n  Earned: #{self.class.trophy_earned_date(self, 'first')}"
 
     puts "\nLatest trophy"
-    puts "  #{self.latest_trophy[:trophy]} (#{self.latest_trophy[:game]})"
-    puts "  #{self.latest_trophy[:description]}"
-    puts "\n  Earned: #{PSNProfiles_player_scraper::Player.trophy_earned_date(self, "latest")}"
+    puts "  #{latest_trophy[:trophy]} (#{latest_trophy[:game]})"
+    puts "  #{latest_trophy[:description]}"
+    puts "\n  Earned: #{self.class.trophy_earned_date(self, 'latest')}"
 
-    puts "\nLength of service: #{self.length_of_service}"
+    puts "\nLength of service: #{length_of_service}"
 
-    self.view_menu
+    view_menu
   end
 
   def view_collections_menu
@@ -130,64 +133,61 @@ class PSNProfiles_player_scraper::Player
     puts "  Enter \"main\" to return to the main menu\n\n"
 
     choice = ""
+    until %w[1 2 3 view main].include?(choice.downcase)
+      choice = gets.strip
+    end
 
-    choice = gets.strip until choice == "1" || choice == "2" || choice == "3" || choice.downcase == "view" || choice.downcase == "main"
-
-    if choice == "1"
-      self.view_recent_trophies
-    elsif choice == "2"
-      self.view_recent_games
-    elsif choice == "3"
-      self.view_rarest_trophies
-    elsif choice.downcase == "view"
-      self.view_menu
+    case choice.downcase
+    when "1" then view_recent_trophies
+    when "2" then view_recent_games
+    when "3" then view_rarest_trophies
+    when "view" then view_menu
     end
   end
 
   def view_recent_trophies
     puts "\nRecent trophies"
 
-    self.recent_trophies.each_with_index do |trophy_data, i|
-      puts "\n(#{i + 1})#{i > 8 ? " " : "  "}#{trophy_data[:trophy]} (#{trophy_data[:game]})"
+    recent_trophies.each_with_index do |trophy_data, i|
+      puts "\n(#{i + 1})#{i > 8 ? ' ' : '  '}#{trophy_data[:trophy]} (#{trophy_data[:game]})"
       puts "     #{trophy_data[:description]}"
     end
 
-    self.view_collections_menu
+    view_collections_menu
   end
 
   def view_recent_games
     puts "\nRecent games"
 
-    self.recent_games.each_with_index do |game_data, i|
-      puts "\n(#{i + 1})#{i > 8 ? " " : "  "}#{game_data[:game]} (#{game_data[:platform]})"
+    recent_games.each_with_index do |game_data, i|
+      puts "\n(#{i + 1})#{i > 8 ? ' ' : '  '}#{game_data[:game]} (#{game_data[:platform]})"
 
-      if game_data[:PSNProfiles_completion_rarity] != nil && game_data[:PSNProfiles_platinum_rarity] != nil
+      if game_data[:PSNProfiles_completion_rarity] && game_data[:PSNProfiles_platinum_rarity]
         puts "     PSNProfiles rarities: #{game_data[:PSNProfiles_completion_rarity]} (completion) | #{game_data[:PSNProfiles_platinum_rarity]} (platinum)"
-      elsif game_data[:PSNProfiles_completion_rarity] != nil
+      elsif game_data[:PSNProfiles_completion_rarity]
         puts "     PSNProfiles completion rarity: #{game_data[:PSNProfiles_completion_rarity]}"
       else
         puts "     PSNProfiles platinum rarity: #{game_data[:PSNProfiles_platinum_rarity]}"
       end
 
-      if game_data[:PSNProfiles_platinum_rarity] != nil
-        psnp_platinum = game_data[:PSNProfiles_platinum_rarity]
-        platinumed = game_data[:platinum] == "0" ? "no" : "yes"
-      else
-        psnp_platinum = "not applicable (no platinum)"
-        platinumed = "not applicable (no platinum)"
-      end
+      psnp_platinum = game_data[:PSNProfiles_platinum_rarity] || "not applicable (no platinum)"
+      platinumed = if game_data[:platinum] == "0"
+                     "no"
+                   else
+                     game_data[:platinum] ? "yes" : "not applicable (no platinum)"
+                   end
 
       puts "\n     Completion: #{game_data[:completion]}"
       puts "     Platinumed: #{platinumed}"
 
-      if game_data[:speedrun_type] != nil
-        if game_data[:speedrun_type] == "Platinum" && game_data[:PSNProfiles_completion_rarity] == nil
-          speedrun_type = ""
-        elsif game_data[:PSNProfiles_platinum_rarity] == nil
-          speedrun_type = ""
-        else
-          speedrun_type = " (#{game_data[:speedrun_type].downcase})"
-        end
+      if game_data[:speedrun_type]
+        speedrun_type = if game_data[:speedrun_type] == "Platinum" && !game_data[:PSNProfiles_completion_rarity]
+                          ""
+                        elsif !game_data[:PSNProfiles_platinum_rarity]
+                          ""
+                        else
+                          " (#{game_data[:speedrun_type].downcase})"
+                        end
 
         puts "     Speedrun#{speedrun_type}: #{game_data[:speedrun_time]}"
       end
@@ -195,62 +195,66 @@ class PSNProfiles_player_scraper::Player
       puts "\n     Golds: #{game_data[:golds]} | Silvers: #{game_data[:silvers]} | Bronzes: #{game_data[:bronzes]}"
       puts "     Trophies earned/available: #{game_data[:earned_trophies]}/#{game_data[:available_trophies]}"
 
-      latest_trophy_date = game_data[:latest_trophy_date].class == DateTime ? game_data[:latest_trophy_date].strftime('%-d %B %Y') : game_data[:latest_trophy_date]
+      latest_trophy_date = if game_data[:latest_trophy_date].is_a?(DateTime)
+                             game_data[:latest_trophy_date].strftime('%-d %B %Y')
+                           else
+                             game_data[:latest_trophy_date]
+                           end
 
       puts "     Most recent trophy date: #{latest_trophy_date}"
-
     end
 
-    self.view_collections_menu
+    view_collections_menu
   end
 
   def view_rarest_trophies
     puts "\nRarest trophies"
 
-    self.rarest_trophies.each_with_index do |trophy_data, i|
+    rarest_trophies.each_with_index do |trophy_data, i|
       puts "\n(#{i + 1})  #{trophy_data[:trophy]} (#{trophy_data[:game]})"
       puts "     #{trophy_data[:grade]} | PSNProfiles rarity: #{trophy_data[:PSNProfiles_rarity]}"
     end
 
-    self.view_collections_menu
+    view_collections_menu
   end
 
   def export(cli)
     puts "\nWhere would you like to export the data to?"
 
     directory = gets.strip
-
     until Dir.exist?(directory)
       puts "\nDirectory not found. Please enter a valid filepath"
       directory = gets.strip
     end
 
-    directory = directory.gsub("\\","/")
-
-    directory += "/" if directory[-1] != "/"
+    directory = directory.gsub("\\", "/")
+    directory += "/" unless directory.end_with?("/")
 
     puts "\nWhat format: XML or JSON?"
 
-    format = gets.strip
-
-    until format.upcase == "XML" || format.upcase == "JSON"
-      puts "\nInvalid format. Please enter \"XML\" or \"JSON\""
+    format = ""
+    until %w[xml json].include?(format.downcase)
       format = gets.strip
+      puts "\nInvalid format. Please enter \"XML\" or \"JSON\"" unless %w[xml json].include?(format.downcase)
     end
 
-    filename = "#{directory}PSNProfiles_data_#{self.psn_id}." + format.downcase
+    filename = "#{directory}PSNProfiles_data_#{psn_id}.#{format.downcase}"
 
-    if File.exists?(filename)
+    if File.exist?(filename)
       i = 2
-      filename = filename.gsub("."," (#{i}).")
+      filename = filename.gsub(".#{format.downcase}", " (#{i}).#{format.downcase}")
 
-      until !File.exists?(filename)
-        filename = filename.gsub("(#{i}).","(#{i += 1}).")
+      while File.exist?(filename)
+        filename = filename.gsub("(#{i}).", "(#{i += 1}).")
       end
     end
 
-    File.write(filename, self.hash.to_xml) if format.upcase == "XML"
-    File.write(filename, JSON.pretty_generate(self.hash)) if format.upcase == "JSON"
+    case format.downcase
+    when "xml"
+      File.write(filename, hash.to_xml)
+    when "json"
+      File.write(filename, JSON.pretty_generate(hash))
+    end
 
     puts "\nData successfully exported to \"#{filename}\"!\n"
 
@@ -258,9 +262,10 @@ class PSNProfiles_player_scraper::Player
   end
 
   def hash
-    player_hash = {}
-    self.instance_variables.each {|variable| player_hash[variable.to_s.delete("@").to_sym] = self.instance_variable_get(variable)}
-    player_hash
+    instance_variables.each_with_object({}) do |variable, hash|
+      key = variable.to_s.delete("@").to_sym
+      hash[key] = instance_variable_get(variable)
+    end
   end
 
   def self.compare(player_one, player_two, cli)
@@ -292,8 +297,8 @@ class PSNProfiles_player_scraper::Player
     puts "  Completed: #{player_one.completed_games} | #{player_two.completed_games}"
     puts "  Played: #{player_one.games_played} | #{player_two.games_played}"
 
-    puts "\nFirst trophy earned: #{PSNProfiles_player_scraper::Player.trophy_earned_date(player_one, "first")} | #{PSNProfiles_player_scraper::Player.trophy_earned_date(player_two, "first")}"
-    puts "Latest trophy earned: #{PSNProfiles_player_scraper::Player.trophy_earned_date(player_one, "latest")} | #{PSNProfiles_player_scraper::Player.trophy_earned_date(player_two, "latest")}"
+    puts "\nFirst trophy earned: #{trophy_earned_date(player_one, 'first')} | #{trophy_earned_date(player_two, 'first')}"
+    puts "Latest trophy earned: #{trophy_earned_date(player_one, 'latest')} | #{trophy_earned_date(player_two, 'latest')}"
     puts "Length of service: #{player_one.length_of_service} | #{player_two.length_of_service}"
 
     cli.main_menu
@@ -302,7 +307,7 @@ class PSNProfiles_player_scraper::Player
   def self.trophy_earned_date(player, first_or_latest)
     time = player.send("#{first_or_latest}_trophy")[:time]
 
-    if time.class == DateTime
+    if time.is_a?(DateTime)
       time.strftime('%H:%M:%S on %-d %B %Y')
     else
       time
