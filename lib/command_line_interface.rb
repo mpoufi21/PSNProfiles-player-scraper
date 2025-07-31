@@ -3,20 +3,15 @@ class PSNProfiles_player_scraper::CommandLineInterface
 
   def run
     puts "\nこんにちは！ Welcome to the PSNProfiles player scraper!"
-
-    self.get_player
-
+    get_player
     puts "\nさようなら！ Goodbye!\n\n"
   end
 
   def get_player
     puts "\nPlease enter a PSN ID:"
-
-    self.player = PSNProfiles_player_scraper::Player.new(self.valid_profile_data)
-
+    self.player = PSNProfiles_player_scraper::Player.new(valid_profile_data)
     puts "\nPlayer successfully scraped!"
-
-    self.main_menu
+    main_menu
   end
 
   def main_menu
@@ -28,36 +23,38 @@ class PSNProfiles_player_scraper::CommandLineInterface
     puts "  Enter \"exit\" to exit\n\n"
 
     choice = ""
+    until %w[1 2 3 4 exit].include?(choice.downcase)
+      choice = gets.strip
+    end
 
-    choice = gets.strip until choice == "1" || choice == "2" || choice == "3" || choice == "4" || choice.downcase == "exit"
-
-    if choice == "1"
-      self.player.view(self)
-    elsif choice == "2"
-      self.player.export(self)
-    elsif choice == "3"
-      puts "\nEnter the PSN ID of the player you wish to compare with:"
-
-      self.player_2 = PSNProfiles_player_scraper::Player.new(self.valid_profile_data)
-
-      PSNProfiles_player_scraper::Player.compare(self.player, self.player_2, self)
-    elsif choice == "4"
-      self.get_player
+    case choice.downcase
+    when "1" then player.view(self)
+    when "2" then player.export(self)
+    when "3" then compare_players
+    when "4" then get_player
+    when "exit" then return
     end
   end
 
-  def valid_profile_data
-    psn_id = gets.strip
-    valid_profile = PSNProfiles_player_scraper::Scraper.valid_profile(psn_id)
+  private
 
-    until valid_profile != false
-      puts "\nInvalid PSN ID. Please try again or refer to note (1) of the README for reasons you might be seeing this error"
+  def compare_players
+    puts "\nEnter the PSN ID of the player you wish to compare with:"
+    self.player_2 = PSNProfiles_player_scraper::Player.new(valid_profile_data)
+    PSNProfiles_player_scraper::Player.compare(player, player_2, self)
+  end
+
+  def valid_profile_data
+    loop do
       psn_id = gets.strip
       valid_profile = PSNProfiles_player_scraper::Scraper.valid_profile(psn_id)
+
+      if valid_profile
+        return PSNProfiles_player_scraper::Scraper.scrape(valid_profile)
+      else
+        puts "\nInvalid PSN ID. Please try again or refer to note (1) of the README " \
+             "for reasons you might be seeing this error"
+      end
     end
-
-    player_data = PSNProfiles_player_scraper::Scraper.scrape(valid_profile)
-
-    player_data
   end
 end
