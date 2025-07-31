@@ -1,6 +1,12 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require_relative '../config/environment'
-require_relative "../lib/command_line_interface.rb"
 
-PSNProfiles_player_scraper::CommandLineInterface.new.run
+begin
+  PSNProfiles_player_scraper::CommandLineInterface.new.run
+rescue StandardError => e
+  warn "Error: #{e.message}"
+  warn e.backtrace if ENV['DEBUG']
+  exit 1
+end
